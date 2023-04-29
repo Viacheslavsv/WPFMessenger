@@ -10,7 +10,7 @@ namespace ChatClient.Net
             _tcpClient = new TcpClient();
         }
 
-        public void ConnectToServer()
+        public void ConnectToServer(string username)
         {
             if (!_tcpClient.Connected)
             {
