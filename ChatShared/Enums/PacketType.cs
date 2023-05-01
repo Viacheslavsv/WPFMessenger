@@ -3,7 +3,9 @@
     public enum PacketType : byte
     {
         Connection,
+        FailedConnection,
         Message,
-        Disconnection
+        Disconnection,
+        Chats
     }
 }

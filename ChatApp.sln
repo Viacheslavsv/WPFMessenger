@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChatClient", "ChatClient\Ch
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChatServer", "ChatServer\ChatServer.csproj", "{EFB7952F-C1C9-4988-B314-597627F9DC78}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatShared", "ChatShared\ChatShared.csproj", "{563F24DD-6418-4CCF-95A0-440E197BA054}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChatShared", "ChatShared\ChatShared.csproj", "{563F24DD-6418-4CCF-95A0-440E197BA054}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

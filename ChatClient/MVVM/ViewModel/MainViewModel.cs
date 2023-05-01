@@ -1,8 +1,12 @@
 ﻿using ChatClient.MVVM.Core;
 using ChatClient.MVVM.Model;
 using ChatClient.Net;
+using ChatShared.DTO;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Net.Sockets;
+using System.Text.Json;
 using System.Windows;
 
 namespace ChatClient.MVVM.ViewModel
@@ -16,8 +20,10 @@ namespace ChatClient.MVVM.ViewModel
 
         public RelayCommand ConnectToServerCommand { get; set; }
         public RelayCommand SendMessageCommand { get; set; }
+        public RelayCommand DisconnectFromServerCommand { get; set; }
 
         public string Username { get; set; }
+        public string IpAddress { get; set; } = "127.0.0.1";
         public string Message { get; set; }
 
         public MainViewModel()
@@ -25,16 +31,33 @@ namespace ChatClient.MVVM.ViewModel
             Users = new();
             Messages = new();
 
-            _server = new ServerConnection();
-            _server.connectedEvent += UserConnected;
-            _server.messageReceivedEvent += MessageReceived;
-            _server.disconnectedEvent += UserDisconnected;
+            ConnectToServerCommand = new(o =>
+            {
+                InitializeServer();
+                try
+                {
+                    _server.ConnectToServer(Username, IpAddress);
+                }
+                catch (SocketException)
+                {
+                    Application.Current.Dispatcher.Invoke(() => Messages.Add("Problems with connection to the server. May be incorrect ip address."));
+                }
+            },
+                o => !string.IsNullOrEmpty(Username) && !string.IsNullOrEmpty(IpAddress));
 
-            ConnectToServerCommand = new(o => _server.ConnectToServer(Username),
-                o => !string.IsNullOrEmpty(Username));
-
-            SendMessageCommand = new(o => _server.SendMessageToServer(Message),
+            SendMessageCommand = new(o =>
+            {
+                _server.SendMessageToServer(Message);
+            },
                 o => !string.IsNullOrEmpty(Message));
+
+            DisconnectFromServerCommand = new(o =>
+            {
+                _server.DisconnectFromServer();
+                Users.Clear();
+                Messages.Clear();
+            },
+                s => _server is not null);
         }
 
         private void UserDisconnected()
@@ -62,6 +85,32 @@ namespace ChatClient.MVVM.ViewModel
             {
                 Application.Current.Dispatcher.Invoke(() => Users.Add(user));
             }
+        }
+
+        private void ChatReceived()
+        {
+            var chatsJson = _server.PacketReader.ReadMessage();
+            var chats = JsonSerializer.Deserialize<List<UserDTO>>(chatsJson);
+
+            Application.Current.Dispatcher.Invoke(() => Users.Clear());
+            foreach (var user in chats)
+            {
+                Application.Current.Dispatcher.Invoke(() => Users.Add(new UserModel()
+                {
+                    Id = user.Id,
+                    Username = user.Username
+                }));
+            }
+        }
+
+        private void InitializeServer()
+        {
+            _server = new ServerConnection();
+            _server.onConnectedEvent += UserConnected;
+            _server.onMessageReceivedEvent += MessageReceived;
+            _server.onDisconnectedEvent += UserDisconnected;
+            _server.onFailedConnection += MessageReceived;
+            _server.onChatsReceived += ChatReceived;
         }
     }
 }

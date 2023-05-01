@@ -1,6 +1,7 @@
-﻿namespace ChatClient.MVVM.Model
+﻿namespace ChatShared.DTO
 {
-    public class UserModel
+    [Serializable]
+    public class UserDTO
     {
         public string Id { get; set; }
 

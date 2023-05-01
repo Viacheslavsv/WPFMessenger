@@ -12,7 +12,7 @@ namespace ChatSharedt.Net.IO
             _memoryStream = new MemoryStream();
         }
 
-        public void WriteOpCode(PacketType opcode)
+        public void WritePacketType(PacketType opcode)
         {
             _memoryStream.WriteByte((byte)opcode);
         }

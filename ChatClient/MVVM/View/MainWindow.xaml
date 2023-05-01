@@ -11,7 +11,7 @@
         <viewmodel:MainViewModel/>
     </Window.DataContext>
 
-    <Grid>
+    <!--<Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="200"/>
             <ColumnDefinition />
@@ -49,5 +49,81 @@
                         Command="{Binding SendMessageCommand}"/>
             </StackPanel>
         </StackPanel>
+    </Grid>-->
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*" />
+            <ColumnDefinition Width="3*" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!--Левая колонка чатов-->
+        <Grid Grid.Column="0" Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="auto" />
+            </Grid.RowDefinitions>
+
+            <!-- Текстовые поля над колонкой чатов -->
+            <StackPanel Grid.Row="0"
+                        Margin="10">
+                <TextBox Margin="0 0 0 5"
+                         Text="{Binding IpAddress,  UpdateSourceTrigger=PropertyChanged}"/>
+                <TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}" 
+                         Margin="0 5 0 0"/>
+                <!-- Кнопка в левой колонке -->
+                <Button Grid.Row="3"
+                        Content="Connect" 
+                        Margin="0 5"
+                        Command="{Binding ConnectToServerCommand}"/>
+                <Button Grid.Row="3"
+                        Content="Disconnect" 
+                        Margin="0 0 0 5" 
+                        Command="{Binding DisconnectFromServerCommand}"/>
+            </StackPanel>
+
+            <!-- Список чатов -->
+            <ListBox Grid.Row="1" 
+                     Margin="10,0,10,10"
+                     Background="#F0F0F0"
+                     Grid.RowSpan="2"
+                     ItemsSource="{Binding Users, UpdateSourceTrigger=PropertyChanged}"
+                     DisplayMemberPath="Username"/>
+
+        </Grid>
+
+        <!--Правая часть экрана-->
+        <Grid Grid.Column="1" Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="auto" />
+            </Grid.RowDefinitions>
+
+            <!-- Текстовая область для отображения сообщений -->
+            <ListView Grid.Row="0" 
+                      Margin="10"
+                      ItemsSource="{Binding Path=Messages,  Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+            <!-- Текстовое поле для ввода сообщений и кнопка отправки -->
+            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="10">
+                <TextBox Height="30"
+                         Width="400"
+                         VerticalContentAlignment="Center" 
+                         Text="{Binding Message, UpdateSourceTrigger=PropertyChanged}"/>
+
+                <Button Width="50"
+                        Content="Send"
+                        Margin="10"
+                        Command="{Binding SendMessageCommand}"/>
+            </StackPanel>
+        </Grid>
     </Grid>
+
 </Window>

@@ -9,29 +9,33 @@ namespace ChatClient.Net
 {
     public class ServerConnection
     {
-        private TcpClient _tcpClient;
+        private static TcpClient _tcpClient;
 
         public PacketReader PacketReader;
 
-        public event Action connectedEvent;
-        public event Action messageReceivedEvent;
-        public event Action disconnectedEvent;
+        public event Action onConnectedEvent;
+        public event Action onMessageReceivedEvent;
+        public event Action onDisconnectedEvent;
+        public event Action onFailedConnection;
+        public event Action onChatsReceived;
 
-        public ServerConnection()
+        public void ConnectToServer(string username, string ipAddress)
         {
-            _tcpClient = new TcpClient();
-        }
-
-        public void ConnectToServer(string username)
-        {
+            _tcpClient = _tcpClient is null ? new TcpClient() : _tcpClient;
             if (!_tcpClient.Connected)
             {
-                string hostName = "127.0.0.1";
-                _tcpClient.Connect(hostName, 7891);
+                try
+                {
+                    _tcpClient.Connect(ipAddress, 7891);
+                }
+                catch (SocketException ex)
+                {
+                    throw ex;
+                }
 
                 PacketReader = new PacketReader(_tcpClient.GetStream());
 
-                if (!string.IsNullOrEmpty(username)) 
+                if (!string.IsNullOrEmpty(username))
                 {
                     var bytePacket = CreateBytePacket(username);
 
@@ -42,37 +46,60 @@ namespace ChatClient.Net
             }
         }
 
+        public void DisconnectFromServer()
+        {
+            if (_tcpClient.Connected)
+            {
+                _tcpClient.GetStream().Close();
+                _tcpClient.Close();
+                _tcpClient = null;
+            }
+        }
+
         private byte[] CreateBytePacket(string packet)
         {
             var connectPacket = new PacketBuilder();
-            connectPacket.WriteOpCode(0);
+            connectPacket.WritePacketType(0);
             connectPacket.WriteMessage(packet);
 
             return connectPacket.GetPacketBytes();
         }
 
-
         private void ReadPackets()
         {
-            Task.Run(() => 
+            Task.Run(() =>
             {
-                while (true) 
+                while (true)
                 {
-                    var opcode = (PacketType)PacketReader.ReadByte();
-                    switch (opcode)
+                    try
                     {
-                        case PacketType.Connection:
-                            connectedEvent?.Invoke();
-                            break;
-                        case PacketType.Message:
-                            messageReceivedEvent?.Invoke();
-                            break;
-                        case PacketType.Disconnection:
-                            disconnectedEvent?.Invoke();
-                            break;
-                        default:
-                            Console.WriteLine("Unknown opcode");
-                            break;
+                        var opcode = (PacketType)PacketReader.ReadByte();
+                        switch (opcode)
+                        {
+                            case PacketType.Connection:
+                                onConnectedEvent?.Invoke();
+                                break;
+                            case PacketType.Message:
+                                onMessageReceivedEvent?.Invoke();
+                                break;
+                            case PacketType.Disconnection:
+                                onDisconnectedEvent?.Invoke();
+                                break;
+                            case PacketType.FailedConnection:
+                                onFailedConnection?.Invoke();
+                                break;
+                            case PacketType.Chats:
+                                onChatsReceived?.Invoke();
+                                break;
+                            default:
+                                Console.WriteLine("Unknown opcode");
+                                break;
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        DisconnectFromServer();
+                        break;
                     }
                 }
             });
@@ -81,7 +108,7 @@ namespace ChatClient.Net
         public void SendMessageToServer(string message)
         {
             var messagePacket = new PacketBuilder();
-            messagePacket.WriteOpCode(PacketType.Message);
+            messagePacket.WritePacketType(PacketType.Message);
             messagePacket.WriteMessage(message);
 
             var byteMessagePacket = messagePacket.GetPacketBytes();
