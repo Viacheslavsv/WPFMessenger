@@ -17,7 +17,8 @@ namespace ChatClient.Net
         public event Action onMessageReceivedEvent;
         public event Action onDisconnectedEvent;
         public event Action onFailedConnection;
-        public event Action onChatsReceived;
+        public event Action onUsersReceived;
+        public event Action onChatReceived;
 
         public void ConnectToServer(string username, string ipAddress)
         {
@@ -88,8 +89,11 @@ namespace ChatClient.Net
                             case PacketType.FailedConnection:
                                 onFailedConnection?.Invoke();
                                 break;
-                            case PacketType.Chats:
-                                onChatsReceived?.Invoke();
+                            case PacketType.Users:
+                                onUsersReceived?.Invoke();
+                                break;
+                            case PacketType.Chat:
+                                onChatReceived?.Invoke();
                                 break;
                             default:
                                 Console.WriteLine("Unknown opcode");
@@ -110,6 +114,27 @@ namespace ChatClient.Net
             var messagePacket = new PacketBuilder();
             messagePacket.WritePacketType(PacketType.Message);
             messagePacket.WriteMessage(message);
+
+            var byteMessagePacket = messagePacket.GetPacketBytes();
+            _tcpClient.Client.Send(byteMessagePacket);
+        }
+
+        public void SendMessageToUser(Guid userId, string message)
+        {
+            var messagePacket = new PacketBuilder();
+            messagePacket.WritePacketType(PacketType.Message);
+            messagePacket.WriteMessage(userId.ToString());
+            messagePacket.WriteMessage(message);
+
+            var byteMessagePacket = messagePacket.GetPacketBytes();
+            _tcpClient.Client.Send(byteMessagePacket);
+        }
+
+        public void RequestForChat(Guid userId)
+        {
+            var messagePacket = new PacketBuilder();
+            messagePacket.WritePacketType(PacketType.Chat);
+            messagePacket.WriteMessage(userId.ToString());
 
             var byteMessagePacket = messagePacket.GetPacketBytes();
             _tcpClient.Client.Send(byteMessagePacket);

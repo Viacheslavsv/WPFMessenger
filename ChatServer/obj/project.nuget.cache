@@ -1,8 +1,11 @@
 {
   "version": 2,
-  "dgSpecHash": "oJzYR4kanewdxdWMxM9hvoaQvPDQHI9kgj1zCOQi/YTSfvJMo0SAyvcE68sSEF2bb14dh3Uh68puF5LqZBIf2g==",
+  "dgSpecHash": "TmMIGaFmIim9oNqfej8iB8g4lWM5oJxlf48dOoJOoCx6sY+5GpWjZ+tRmMGun2e4LKMxNKm9cjIJnhEeUfqVfg==",
   "success": true,
   "projectFilePath": "D:\\Материалы универ\\2 курс\\КтПП\\ChatApp\\ChatServer\\ChatServer.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "C:\\Users\\Viacheslav\\.nuget\\packages\\automapper\\12.0.1\\automapper.12.0.1.nupkg.sha512",
+    "C:\\Users\\Viacheslav\\.nuget\\packages\\microsoft.csharp\\4.7.0\\microsoft.csharp.4.7.0.nupkg.sha512"
+  ],
   "logs": []
 }

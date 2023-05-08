@@ -7,19 +7,21 @@ namespace ChatServer
     public class Program
     {
         static List<Client> _users;
+        static List<Chat> _chats;
         static TcpListener _listener;
         static Broadcaster _broadcaster;
         static void Main(string[] args)
         {
             _users = new List<Client>();
-            _broadcaster = new Broadcaster(_users);
+            _chats = new List<Chat>();
+            _broadcaster = new Broadcaster(_users, _chats);
             _listener = new TcpListener(IPAddress.Parse("127.0.0.1"), 7891);
             _listener.Start();
 
             while (true)
             {
                 var tcpClient = _listener.AcceptTcpClient();
-                var client = new Client(tcpClient, _broadcaster);
+                var client = new Client(tcpClient, _broadcaster, _users);
                 var isClientAlreadyExist = _users.Select(x => x.Username).Contains(client.Username);
                 if (isClientAlreadyExist)
                 {
@@ -32,11 +34,6 @@ namespace ChatServer
                     _broadcaster.BroadcastConnection(client);
                 }
             }
-        }
-
-        private static void BroadcastMessages(Client fromClient, Client toClient)
-        {
-
         }
     }
 }

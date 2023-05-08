@@ -6,6 +6,7 @@
         FailedConnection,
         Message,
         Disconnection,
-        Chats
+        Chat,
+        Users
     }
 }

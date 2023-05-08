@@ -10,14 +10,17 @@ namespace ChatServer.Models
         private PacketReader _packetReader;
         private Broadcaster _broadcaster;
 
+        private List<Client> _clients;
+
         public string Username { get; set; }
 
         public Guid Id { get; set; }
 
         public TcpClient ClientSocket { get; set; }
 
-        public Client(TcpClient client, Broadcaster broadcaster)
+        public Client(TcpClient client, Broadcaster broadcaster, List<Client> clients)
         {
+            _clients = clients;
             _broadcaster = broadcaster;
             ClientSocket = client;
             Id = Guid.NewGuid();
@@ -41,9 +44,21 @@ namespace ChatServer.Models
                     switch (opcode)
                     {
                         case PacketType.Message:
+                            var recipientIdString = _packetReader.ReadMessage();
+                            var recipientId = Guid.Parse(recipientIdString);
+                            var recipientUsername = _clients.FirstOrDefault(c => c.Id == recipientId)?.Username;
+
                             var message = _packetReader.ReadMessage();
-                            Console.WriteLine($"{DateTime.Now} {Id} {Username}: {message}");
-                            _broadcaster.BroadcastMessage($"{Username}: {message} {DateTime.Now.ToShortTimeString()}");
+                            var broadcastingMessage = $"{DateTime.Now.ToString("HH:mm")} {Username}: {message}";
+
+                            Console.WriteLine($"{DateTime.Now.ToString("HH:mm")} From {Id} {Username} To {recipientId}: {message}");
+                            _broadcaster.BroadcastMessageToUser(Id, recipientId, broadcastingMessage);
+                            break;
+                        case PacketType.Chat:
+                            recipientIdString = _packetReader.ReadMessage();
+                            recipientId = Guid.Parse(recipientIdString);
+
+                            _broadcaster.BroadcastChat(Id, recipientId);
                             break;
                         default:
                             break;

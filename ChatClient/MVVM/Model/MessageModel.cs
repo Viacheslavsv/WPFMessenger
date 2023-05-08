@@ -1,0 +1,23 @@
+﻿using ChatShared.DTO;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace ChatClient.MVVM.Model
+{
+    public class MessageModel
+    {
+        public string Text { get; set; }
+
+        public DateTime TimeCode { get; set; }
+
+        public UserModel Sender { get; set; }
+
+        public override string ToString()
+        {
+            return Text;
+        }
+    }
+}

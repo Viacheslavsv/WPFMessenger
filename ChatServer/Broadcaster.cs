@@ -1,4 +1,5 @@
-﻿using ChatServer.Models;
+﻿using AutoMapper;
+using ChatServer.Models;
 using ChatShared.DTO;
 using ChatShared.Enums;
 using ChatSharedt.Net.IO;
@@ -8,11 +9,13 @@ namespace ChatServer
 {
     public class Broadcaster
     {
-        private  List<Client> _users =new();
+        private List<Client> _users = new();
+        private List<Chat> _chats = new();
 
-        public Broadcaster(List<Client> users)
+        public Broadcaster(List<Client> users, List<Chat> chats)
         {
             _users = users;
+            _chats = chats;
         }
 
         public void BroadcastConnection(Client item)
@@ -29,7 +32,6 @@ namespace ChatServer
             }
 
             BroadcastUsersList(item);
-            BroadcastMessage($"{item.Username} connected to the chat. {DateTime.Now.ToShortTimeString()}");
         }
 
         public void BroadcastFailedConnection(Client failedClient)
@@ -40,10 +42,9 @@ namespace ChatServer
 
             var bytePacket = packet.GetPacketBytes();
             failedClient.ClientSocket.Client.Send(bytePacket);
-
         }
 
-        public void BroadcastMessage(string message)
+        public void BroadcastMessageToAll(string message)
         {
             foreach (var client in _users)
             {
@@ -54,6 +55,43 @@ namespace ChatServer
                 var byteMessagePacket = messagePacket.GetPacketBytes();
                 client.ClientSocket.Client.Send(byteMessagePacket);
             }
+        }
+
+        public void BroadcastMessageToUser(Guid fromClientId, Guid toClientId, string message)
+        {
+            var sender = _users.FirstOrDefault(u => u.Id == fromClientId);
+            var recipient = _users.FirstOrDefault(u => u.Id == toClientId);
+            var chat = _chats.FirstOrDefault(c=>c.Users.Select(cl=>cl.Id).Contains(fromClientId) && c.Users.Select(cl => cl.Id).Contains(toClientId));
+            if(chat is null)
+            {
+                chat = new Chat()
+                {
+                    Users = new List<Client>
+                    {
+                        sender,
+                        recipient
+                    },
+                    Messages = new(),
+                    Id = Guid.NewGuid()
+                };
+            }
+
+            var newMessage = new Message()
+            {
+                Client = sender,
+                Text = message,
+                TimeCode = DateTime.Now
+            };
+
+            var messagePacket = new PacketBuilder();
+            messagePacket.WritePacketType(PacketType.Message);
+            messagePacket.WriteMessage(chat.Id.ToString());
+            messagePacket.WriteMessage(newMessage.Text);
+
+            var byteMessagePacket = messagePacket.GetPacketBytes();
+            recipient?.ClientSocket.Client.Send(byteMessagePacket);
+
+            chat.Messages.Add(newMessage);
         }
 
         public void BroadcastDisconnect(string id)
@@ -72,8 +110,7 @@ namespace ChatServer
                     var bytePacket = packet.GetPacketBytes();
                     client.ClientSocket.Client.Send(bytePacket);
                 }
-
-                BroadcastMessage($"{disconnectedUser.Username} leave the chat. {DateTime.Now.ToShortTimeString()}");
+                BroadcastUsersList(disconnectedUser);
             }
         }
 
@@ -89,18 +126,59 @@ namespace ChatServer
 
                 usersDto.Add(new UserDTO()
                 {
-                    Id = user.Id.ToString(),
+                    Id = user.Id,
                     Username = user.Username
                 });
             }
             var usersJson = JsonSerializer.Serialize(usersDto);
 
             var messagePacket = new PacketBuilder();
-            messagePacket.WritePacketType(PacketType.Chats);
+            messagePacket.WritePacketType(PacketType.Users);
             messagePacket.WriteMessage(usersJson);
 
             var byteMessagePacket = messagePacket.GetPacketBytes();
             client.ClientSocket.Client.Send(byteMessagePacket);
+        }
+
+        public void BroadcastChat(Guid clientSenderId, Guid targetClientId)
+        {
+            var sender = _users.FirstOrDefault(u => u.Id == clientSenderId);
+
+            var chat = _chats.FirstOrDefault(c => c.Users.Select(cl => cl.Id).Contains(clientSenderId) && c.Users.Select(cl => cl.Id).Contains(targetClientId));
+            if (chat is null)
+            {
+                var recipient = _users.FirstOrDefault(u => u.Id == targetClientId);
+                chat = new Chat()
+                {
+                    Users = new List<Client>
+                    {
+                        sender,
+                        recipient
+                    },
+                    Messages = new(),
+                    Id = Guid.NewGuid()
+                };
+                _chats.Add(chat);
+            }
+
+            var mapperConfig = new MapperConfiguration(c =>
+            {
+                c.CreateMap<Message, MessageDTO>();
+                c.CreateMap<Client, UserDTO>();
+                c.CreateMap<Chat, ChatDTO>();
+            });
+            var mapper = new Mapper(mapperConfig);
+
+            var chatsDto = mapper.Map<ChatDTO>(chat);
+
+            var chatsJson = JsonSerializer.Serialize(chatsDto);
+
+            var messagePacket = new PacketBuilder();
+            messagePacket.WritePacketType(PacketType.Chat);
+            messagePacket.WriteMessage(chatsJson);
+
+            var byteMessagePacket = messagePacket.GetPacketBytes();
+            sender.ClientSocket.Client.Send(byteMessagePacket);
         }
     }
 }

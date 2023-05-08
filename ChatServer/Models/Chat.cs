@@ -4,7 +4,7 @@
     {
         public Guid Id { get; set; }
 
-        public List<Client> Clients { get; set; }
+        public List<Client> Users { get; set; }
 
         public List<Message> Messages { get; set; }
     }
