@@ -29,7 +29,10 @@ namespace ChatServer.Models
             var opcode = _packetReader.ReadByte();
             Username = _packetReader.ReadMessage();
 
-            Console.WriteLine($"{DateTime.Now}:\n {Id} Client {Username} has connected to the chat.");
+            Console.BackgroundColor = ConsoleColor.Green;
+            Console.ForegroundColor = ConsoleColor.Black;
+            Console.WriteLine($"{DateTime.Now}: Client {Username} with id {Id} has connected to the chat.");
+            Console.ResetColor();
 
             Task.Run(() => Process());
         }
@@ -51,7 +54,11 @@ namespace ChatServer.Models
                             var message = _packetReader.ReadMessage();
                             var broadcastingMessage = $"{DateTime.Now.ToString("HH:mm")} {Username}: {message}";
 
-                            Console.WriteLine($"{DateTime.Now.ToString("HH:mm")} From {Id} {Username} To {recipientId}: {message}");
+                            Console.BackgroundColor = ConsoleColor.Blue;
+                            Console.ForegroundColor = ConsoleColor.Black;
+                            Console.WriteLine($"{DateTime.Now} From {Id} To {recipientId}: {message}");
+                            Console.ResetColor();
+
                             _broadcaster.BroadcastMessageToUser(Id, recipientId, broadcastingMessage);
                             break;
                         case PacketType.Chat:
@@ -66,7 +73,11 @@ namespace ChatServer.Models
                 }
                 catch (Exception)
                 {
-                    Console.WriteLine($"{DateTime.Now}:\n{Id} {Username} client disconected.\n" + new string('=', 30));
+                    Console.BackgroundColor = ConsoleColor.Red;
+                    Console.ForegroundColor = ConsoleColor.Black;
+                    Console.WriteLine($"{DateTime.Now}: Client {Username} with id {Id} has disconnected to the chat.");
+                    Console.ResetColor();
+
                     _broadcaster.BroadcastDisconnect(Id.ToString());
                     ClientSocket.Close();
                     break;

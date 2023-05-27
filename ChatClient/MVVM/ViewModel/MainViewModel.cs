@@ -119,6 +119,14 @@ namespace ChatClient.MVVM.ViewModel
             }
         }
 
+        private void FailedConnection()
+        {
+            _isConnected = false;
+            var message = _server.PacketReader.ReadMessage();
+
+            MessageBox.Show(message, "Problems with connection!", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+
         private void UserConnected()
         {
             var user = new UserModel()
@@ -189,7 +197,7 @@ namespace ChatClient.MVVM.ViewModel
             _server.onConnectedEvent += UserConnected;
             _server.onMessageReceivedEvent += MessageReceived;
             _server.onDisconnectedEvent += UserDisconnected;
-            _server.onFailedConnection += MessageReceived;
+            _server.onFailedConnection += FailedConnection;
             _server.onUsersReceived += UsersListReceived;
             _server.onChatReceived += ChatRecieved;
         }
